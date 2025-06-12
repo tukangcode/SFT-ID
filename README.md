@@ -4,7 +4,7 @@
 
 A Tampermonkey userscript to automate extraction and export of Shopee order history into CSV and Markdown reports. Useful for personal finance tracking, expense summaries, and data analysis of Shopee orders.
 
-🔗 **[Lihat Versi Bahasa Indonesia](#versi-bahasa-indonesia)**
+🔗 **[Bahasa Indonesia DIbawah](#versi-bahasa-indonesia)**
 # Shopee Order Scraper Tampermonkey Script
 
 ## 📦 Files
@@ -55,7 +55,7 @@ We are not affiliated with Shopee in any way.
 
 ---
 
-# 🇮🇩 Versi Bahasa Indonesia
+# 🇮🇩 Bahasa Indonesia
 
 ## 📦 File
 
