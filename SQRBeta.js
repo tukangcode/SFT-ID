@@ -211,17 +211,37 @@
                     <button class="modal-close" id="modal-close">✕</button>
                 </div>
                 <div class="modal-content">📘 How to Use:
-1. Allow Popups for Shopee
-   - Chrome: 🔐 > Site Settings > Allow Popups
-   - Firefox: ⓘ > Permissions > Allow Popups
-2. Do test by click extract order link for current visible page
-4. Make sure link are not duplicated
-4. If CAPTCHA appears:
-   - skrip will pause for 60 second till captcha solved
-   - sc
-   - Click C
-5. Export results as CSV or Markdown
-6. Close UI with Ctrl+M  when done</div>
+1. Enable Popups for Shopee:
+   - Chrome: 🔐 (Site Info) > Site Settings > Allow Popups
+   - Firefox: ⓘ (Site Info) > Permissions > Allow Popups
+
+2. Extract Order Links:
+   - Go to "My Orders" page.
+   - Click [🔍 Extract Order Links] to capture visible order URLs.
+
+3. Ensure No Duplicate Links:
+   - Click [🗑️ Remove Duplicates] to clean up duplicated links.
+
+4. Start Parsing:
+   - Click [Start] to begin extracting order details.
+   - Wait patiently; progress will appear in the status.
+
+5. If CAPTCHA Appears:
+   - Script will pause for 60 seconds to let you solve CAPTCHA manually.
+   - After solving, let tab for 10 second script will continue last progrres
+   - Parsing will automatically resume.
+
+7. Export Results:
+   - After parsing, export the result via:
+     - [Export CSV] for spreadsheet (Excel, etc).
+     - [Export Markdown] for clean text format.
+
+8. Close UI:
+   - Press Ctrl+M anytime to toggle the UI visibility.
+
+ℹ️ Notes:
+- Avoid opening more than 3 order links manually to prevent Shopee detection.
+- Parsing 200+ orders usually does NOT trigger CAPTCHA but stay alert just in case.
                 <div class="modal-footer">
                     <button class="modal-close" id="modal-ok">OK</button>
                 </div>
