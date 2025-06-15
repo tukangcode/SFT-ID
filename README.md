@@ -1,24 +1,25 @@
 # SQR-ID
-(beta testing) Shoppe Quick Spending Report maker (title subject to change), this markdown generate with helo of Ai
-# ( Beta )Shopee Financial Spending Report Maker (Final Stable + Ctrl+M Fix)
+Shoppe Quick Spending Report maker (title subject to change),  
+# (Beta) Shopee Financial Spending Report Maker 
 
 A Tampermonkey userscript to automate extraction and export of Shopee order history into CSV and Markdown reports. Useful for personal finance tracking, expense summaries, and data analysis of Shopee orders.
 
-🔗 **[Bahasa Indonesia DIbawah](#versi-bahasa-indonesia)**
+🔗 **[Bahasa Indonesia Di Bawah](#-bahasa-indonesia)**
+
 # Shopee Order Scraper Tampermonkey Script
 
 ## 📦 Files
 
-- **Userscript(coming soon stable version):** [Download sqrbeta.js](#) <!-- TODO: Replace # with actual link -->
+- *Userscript (coming soon stable version):** [Download sqrbeta.js](#) <!-- TODO: Replace # with actual link -->
 - **Video Tutorial:** Coming Soon!
 
 ## 📝 Table of Contents
 
-1. [Features](#features)
-2. [Usage Instructions](#usage-instructions)
-3. [Notes](#notes)
-4. [Disclaimer](#disclaimer)
-5. [🇮🇩 Baca Versi Bahasa Indonesia](#versi-bahasa-indonesia)
+1. [Features](#-features)
+2. [Usage Instructions](#-usage-instructions)
+3. [Notes](#-notes)
+4. [Disclaimer](#-disclaimer)
+5. [🇮🇩 Baca Versi Bahasa Indonesia](#-bahasa-indonesia)
 
 ## 🚀 Features
 
@@ -64,10 +65,10 @@ We are not affiliated with Shopee in any way.
 
 ## 📝 Daftar Isi
 
-1. [Fitur](#fitur)
-2. [Cara Pakai](#cara-pakai)
-3. [Catatan](#catatan)
-4. [Disclaimer](#disclaimer-1)
+1. [Fitur](#-fitur)
+2. [Cara Pakai](#-cara-pakai)
+3. [Catatan](#-catatan)
+4. [Disclaimer](#-disclaimer-1)
 
 ## 🚀 Fitur
 
