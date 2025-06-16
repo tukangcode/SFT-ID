@@ -20,7 +20,17 @@
         MAX_RETRIES: 2,
         UI_TOGGLE_KEY: 'KeyM',
         THEME_KEY: 'shopee_parser_theme',
-        CSV_DELIMITER: ';'
+        CSV_DELIMITER: ';',
+        SORT_DIRECTIONS: {
+            ASC: 'asc',
+            DESC: 'desc'
+        },
+        FILTER_TYPES: {
+            CONTAINS: 'contains',
+            EQUALS: 'equals',
+            GREATER_THAN: 'greater_than',
+            LESS_THAN: 'less_than'
+        }
     };
 
     // Global State
@@ -30,6 +40,12 @@
     let extractedUrls = new Set();
     let isUIHidden = false;
     let isDarkMode = localStorage.getItem(CONFIG.THEME_KEY) === 'dark';
+    let currentSort = {
+        column: null,
+        direction: CONFIG.SORT_DIRECTIONS.ASC
+    };
+    let currentFilters = [];
+    let searchQuery = '';
 
     // === Inject UI Styles ===
     const style = document.createElement('style');
@@ -370,6 +386,182 @@
     border-width: 0 0 8px 8px;
     border-color: transparent transparent var(--text-secondary) transparent;
 }
+
+.filter-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.search-box:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(238, 77, 45, 0.1);
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    width: 120px;
+}
+
+.filter-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.filter-btn:hover {
+    background: var(--hover-bg);
+}
+
+.filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.filter-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.filter-tag button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.75rem;
+}
+
+.filter-tag button:hover {
+    color: var(--error-color);
+}
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sortable:hover {
+    background: var(--hover-bg);
+}
+
+.sortable::after {
+    content: '↕';
+    margin-left: 4px;
+    opacity: 0.5;
+}
+
+.sortable.asc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.sortable.desc::after {
+    content: '↓';
+    opacity: 1;
+}
+
+.stats-panel {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    flex: 1;
+    min-width: 200px;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-value.positive { color: var(--success-color); }
+.stat-value.negative { color: var(--error-color); }
+
+.guide-highlight {
+    border: 2px solid #f59e0b !important;
+    box-shadow: 0 0 12px 2px #f59e0b66 !important;
+    animation: pulse-guide 1.2s infinite;
+    position: relative;
+}
+@keyframes pulse-guide {
+    0% { box-shadow: 0 0 12px 2px #f59e0b66; }
+    50% { box-shadow: 0 0 24px 6px #f59e0b99; }
+    100% { box-shadow: 0 0 12px 2px #f59e0b66; }
+}
+.guide-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 8px;
+    z-index: 2;
+    box-shadow: 0 2px 6px #f59e0b55;
+}
 `;
 
     document.head.appendChild(style);
@@ -399,24 +591,31 @@
                     <button class="btn btn-gray" id="extract-btn">🔗 Extract Order Links</button>
                 </div>
                 <div class="parser-status" id="status">Ready</div>
+                <div id="progress-bar-container" style="width: 100%; margin: 12px 0; display: none;">
+                    <div id="progress-bar" style="height: 16px; width: 0; background: var(--accent-color); border-radius: 8px; transition: width 0.2s;"></div>
+                    <div id="progress-bar-label" style="position: absolute; left: 50%; top: 0; transform: translateX(-50%); color: var(--text-primary); font-size: 0.85rem; font-weight: 500;"></div>
+                </div>
                 <table class="parser-table" id="results-table">
                     <thead>
                         <tr>
-                            <th>Entry</th>
-                            <th>Shop</th>
-                            <th>Order Date</th>
-                            <th>Item</th>
-                            <th>Subtotal Produk</th>
-                            <th>Subtotal Pengiriman</th>
-                            <th>Diskon Pengiriman</th>
-                            <th>Voucher Shopee</th>
-                            <th>Biaya Layanan</th>
-                            <th>Total Pesanan</th>
+                            <th class="sortable" data-column="Entry">Entry</th>
+                            <th class="sortable" data-column="Shop">Shop</th>
+                            <th class="sortable" data-column="Order Date">Order Date</th>
+                            <th class="sortable" data-column="Item">Item</th>
+                            <th class="sortable" data-column="Subtotal Produk">Subtotal Produk</th>
+                            <th class="sortable" data-column="Subtotal Pengiriman">Subtotal Pengiriman</th>
+                            <th class="sortable" data-column="Diskon Pengiriman">Diskon Pengiriman</th>
+                            <th class="sortable" data-column="Voucher Shopee">Voucher Shopee</th>
+                            <th class="sortable" data-column="Biaya Layanan">Biaya Layanan</th>
+                            <th class="sortable" data-column="Total Pesanan">Total Pesanan</th>
                             <th>URL</th>
                         </tr>
                     </thead>
                     <tbody id="results-body"></tbody>
                 </table>
+                <div id="grand-total-container" style="margin-top: 20px; text-align: right;">
+                    <span style="font-size: 1.25rem; font-weight: bold; color: var(--accent-color);">Grand Total: <span id="grand-total-value">Rp 0</span></span>
+                </div>
                 <div class="credit">Developed by <a href="https://github.com/tukangcode" target="_blank" style="color: #3b82f6; text-decoration: underline;">Ryu-Sena</a> | IndoTech Community</div>
             </div>
             <div class="guide-modal" id="guide-modal">
@@ -468,6 +667,45 @@
         </div>
         <div class="theme-toggle" id="theme-toggle">${isDarkMode ? '☀️' : '🌙'}</div>
         <div class="notification" id="notification"></div>
+        <div class="filter-controls">
+            <input type="text" class="search-box" id="search-input" placeholder="Search orders...">
+            <div class="filter-group">
+                <select class="filter-select" id="filter-column">
+                    <option value="Shop">Shop</option>
+                    <option value="Order Date">Order Date</option>
+                    <option value="Item">Item</option>
+                    <option value="Subtotal Produk">Subtotal Produk</option>
+                    <option value="Total Pesanan">Total Pesanan</option>
+                </select>
+                <select class="filter-select" id="filter-type">
+                    <option value="contains">Contains</option>
+                    <option value="equals">Equals</option>
+                    <option value="greater_than">Greater Than</option>
+                    <option value="less_than">Less Than</option>
+                </select>
+                <input type="text" class="filter-input" id="filter-value" placeholder="Value...">
+                <button class="filter-btn" id="add-filter-btn">Add Filter</button>
+            </div>
+        </div>
+        <div class="filter-tags" id="filter-tags"></div>
+        <div class="stats-panel" id="stats-panel">
+            <div class="stat-item">
+                <div class="stat-label">Total Orders</div>
+                <div class="stat-value" id="total-orders">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Spent</div>
+                <div class="stat-value" id="total-spent">Rp 0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Average Order Value</div>
+                <div class="stat-value" id="avg-order">Rp 0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Savings</div>
+                <div class="stat-value positive" id="total-savings">Rp 0</div>
+            </div>
+        </div>
     `;
 
     const div = document.createElement('div');
@@ -493,6 +731,21 @@
     const themeBtn = document.getElementById('theme-btn');
     const themeToggle = document.getElementById('theme-toggle');
     const notification = document.getElementById('notification');
+    const searchInput = document.getElementById('search-input');
+    const filterColumn = document.getElementById('filter-column');
+    const filterType = document.getElementById('filter-type');
+    const filterValue = document.getElementById('filter-value');
+    const addFilterBtn = document.getElementById('add-filter-btn');
+    const filterTags = document.getElementById('filter-tags');
+    const statsPanel = document.getElementById('stats-panel');
+    const totalOrders = document.getElementById('total-orders');
+    const totalSpent = document.getElementById('total-spent');
+    const avgOrder = document.getElementById('avg-order');
+    const totalSavings = document.getElementById('total-savings');
+    const grandTotalValue = document.getElementById('grand-total-value');
+    const progressBarContainer = document.getElementById('progress-bar-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressBarLabel = document.getElementById('progress-bar-label');
 
     // === Helper Functions ===
     function showNotification(message, type = 'info') {
@@ -587,6 +840,192 @@
         }
     }
 
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 3
+        }).format(amount);
+    }
+
+    function parseCurrency(amount) {
+        if (typeof amount === 'number') return amount;
+        return parseFloat(amount.replace(/[^0-9.-]+/g, '')) || 0;
+    }
+
+    function updateStats() {
+        const filteredData = getFilteredData();
+        const total = filteredData.reduce((sum, order) => {
+            return sum + order.items.reduce((itemSum, item) => {
+                return itemSum + parseCurrency(item.totalPesanan);
+            }, 0);
+        }, 0);
+
+        const savings = filteredData.reduce((sum, order) => {
+            return sum + order.items.reduce((itemSum, item) => {
+                return itemSum + parseCurrency(item.diskonPengiriman) + parseCurrency(item.voucherShopee);
+            }, 0);
+        }, 0);
+
+        totalOrders.textContent = filteredData.length;
+        totalSpent.textContent = formatCurrency(total);
+        avgOrder.textContent = formatCurrency(total / (filteredData.length || 1));
+        totalSavings.textContent = formatCurrency(savings);
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        const filteredData = getFilteredData();
+        const grandTotal = filteredData.reduce((sum, order) => {
+            return sum + order.items.reduce((itemSum, item) => {
+                return itemSum + parseCurrency(item.totalPesanan);
+            }, 0);
+        }, 0);
+        if (grandTotalValue) {
+            grandTotalValue.textContent = formatCurrency(grandTotal);
+        }
+    }
+
+    function getFilteredData() {
+        let filtered = [...parsedData];
+
+        // Apply search
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(order => {
+                return order.Shop.toLowerCase().includes(query) ||
+                       order['Order Date'].toLowerCase().includes(query) ||
+                       order.items.some(item => item.name.toLowerCase().includes(query));
+            });
+        }
+
+        // Apply filters
+        currentFilters.forEach(filter => {
+            filtered = filtered.filter(order => {
+                return order.items.some(item => {
+                    const value = item[filter.column] || order[filter.column];
+                    if (!value) return false;
+
+                    switch (filter.type) {
+                        case CONFIG.FILTER_TYPES.CONTAINS:
+                            return value.toLowerCase().includes(filter.value.toLowerCase());
+                        case CONFIG.FILTER_TYPES.EQUALS:
+                            return value.toLowerCase() === filter.value.toLowerCase();
+                        case CONFIG.FILTER_TYPES.GREATER_THAN:
+                            return parseCurrency(value) > parseCurrency(filter.value);
+                        case CONFIG.FILTER_TYPES.LESS_THAN:
+                            return parseCurrency(value) < parseCurrency(filter.value);
+                        default:
+                            return true;
+                    }
+                });
+            });
+        });
+
+        // Apply sorting
+        if (currentSort.column) {
+            filtered.sort((a, b) => {
+                const aValue = a.items[0]?.[currentSort.column] || a[currentSort.column];
+                const bValue = b.items[0]?.[currentSort.column] || b[currentSort.column];
+
+                if (typeof aValue === 'number' || typeof bValue === 'number') {
+                    const aNum = parseCurrency(aValue);
+                    const bNum = parseCurrency(bValue);
+                    return currentSort.direction === CONFIG.SORT_DIRECTIONS.ASC ? aNum - bNum : bNum - aNum;
+                }
+
+                const comparison = String(aValue).localeCompare(String(bValue));
+                return currentSort.direction === CONFIG.SORT_DIRECTIONS.ASC ? comparison : -comparison;
+            });
+        }
+
+        return filtered;
+    }
+
+    function updateTable() {
+        const filteredData = getFilteredData();
+        resultsBody.innerHTML = '';
+
+        filteredData.forEach(order => {
+            order.items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${order.Entry}</td>
+                    <td>${order.Shop}</td>
+                    <td>${order['Order Date']}</td>
+                    <td>${item.name}</td>
+                    <td class="price">${item.subtotalProduk || '-'}</td>
+                    <td class="price">${item.subtotalPengiriman || '-'}</td>
+                    <td class="price negative">${item.diskonPengiriman || '-'}</td>
+                    <td class="price negative">${item.voucherShopee || '-'}</td>
+                    <td class="price">${item.biayaLayanan || '-'}</td>
+                    <td class="price total">${item.totalPesanan || '-'}</td>
+                    <td><a href="${order.URL}" target="_blank">${order.URL}</a></td>
+                `;
+                resultsBody.appendChild(row);
+            });
+        });
+
+        updateStats();
+    }
+
+    function updateFilterTags() {
+        filterTags.innerHTML = '';
+        currentFilters.forEach((filter, index) => {
+            const tag = document.createElement('div');
+            tag.className = 'filter-tag';
+            tag.innerHTML = `
+                ${filter.column} ${filter.type} ${filter.value}
+                <button onclick="removeFilter(${index})">×</button>
+            `;
+            filterTags.appendChild(tag);
+        });
+    }
+
+    function addFilter() {
+        const column = filterColumn.value;
+        const type = filterType.value;
+        const value = filterValue.value;
+
+        if (!value) {
+            showNotification('⚠️ Please enter a filter value', 'warning');
+            return;
+        }
+
+        currentFilters.push({ column, type, value });
+        filterValue.value = '';
+        updateFilterTags();
+        updateTable();
+    }
+
+    function removeFilter(index) {
+        currentFilters.splice(index, 1);
+        updateFilterTags();
+        updateTable();
+    }
+
+    function handleSort(column) {
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === CONFIG.SORT_DIRECTIONS.ASC
+                ? CONFIG.SORT_DIRECTIONS.DESC
+                : CONFIG.SORT_DIRECTIONS.ASC;
+        } else {
+            currentSort.column = column;
+            currentSort.direction = CONFIG.SORT_DIRECTIONS.ASC;
+        }
+
+        // Update sort indicators
+        document.querySelectorAll('.sortable').forEach(th => {
+            th.classList.remove('asc', 'desc');
+            if (th.dataset.column === column) {
+                th.classList.add(currentSort.direction);
+            }
+        });
+
+        updateTable();
+    }
+
     function addResult(result) {
         if (!result || !result.items.length) return;
 
@@ -609,6 +1048,7 @@
         });
 
         parsedData.push(result);
+        updateStats();
     }
 
     function clearResults() {
@@ -616,6 +1056,14 @@
             resultsBody.removeChild(resultsBody.firstChild);
         }
         parsedData = [];
+        currentFilters = [];
+        searchQuery = '';
+        currentSort = {
+            column: null,
+            direction: CONFIG.SORT_DIRECTIONS.ASC
+        };
+        updateFilterTags();
+        updateStats();
         updateStatus("🧹 Cleared", 'info');
     }
 
@@ -634,6 +1082,7 @@
     function exportToCSV(data) {
         const headers = ['Entry','Shop','Order Date','Item','Subtotal Produk','Subtotal Pengiriman','Diskon Pengiriman','Voucher Shopee','Biaya Layanan','Total Pesanan','URL'];
         let csv = headers.join(CONFIG.CSV_DELIMITER) + '\n';
+        let grandTotal = 0;
         data.forEach(order => {
             order.items.forEach(item => {
                 csv += [
@@ -649,8 +1098,13 @@
                     item.totalPesanan || '-',
                     `"${order.URL}"`
                 ].join(CONFIG.CSV_DELIMITER) + '\n';
+                grandTotal += parseCurrency(item.totalPesanan);
             });
         });
+        // Add a summary row for Grand Total
+        csv += [
+            '', '', '', '', '', '', '', '', 'Grand Total', formatCurrency(grandTotal), ''
+        ].join(CONFIG.CSV_DELIMITER) + '\n';
         downloadFile(csv, 'shopee_orders.csv');
         showNotification('✅ CSV exported successfully!', 'success');
     }
@@ -859,14 +1313,40 @@
                 addResult(result);
                 currentEntry++;
                 if (urls.indexOf(url) < urls.length - 1) {
-                    updateStatus(`⏳ Waiting ${CONFIG.BETWEEN_DELAY / 1000}s`, 'info');
+                    showProgressBar(CONFIG.BETWEEN_DELAY);
                     await cancellableDelay(CONFIG.BETWEEN_DELAY);
+                    hideProgressBar();
                 }
             }
         }
 
         if (isParsing) {
-            updateStatus("✅ All done!", 'success');
+            // Calculate grand total
+            const grandTotal = parsedData.reduce((sum, order) => {
+                return sum + order.items.reduce((itemSum, item) => {
+                    return itemSum + parseCurrency(item.totalPesanan);
+                }, 0);
+            }, 0);
+
+            // Calculate total savings
+            const totalSavings = parsedData.reduce((sum, order) => {
+                return sum + order.items.reduce((itemSum, item) => {
+                    return itemSum + parseCurrency(item.diskonPengiriman) + parseCurrency(item.voucherShopee);
+                }, 0);
+            }, 0);
+
+            // Format the completion message with financial summary
+            const completionMessage = `
+✅ Parsing completed successfully!
+
+📊 Financial Summary:
+• Total Orders: ${parsedData.length}
+• Grand Total Spent: ${formatCurrency(grandTotal)}
+• Total Savings: ${formatCurrency(totalSavings)}
+• Average Order Value: ${formatCurrency(grandTotal / parsedData.length)}
+`;
+
+            updateStatus(completionMessage, 'success');
             showNotification('✅ Parsing completed successfully!', 'success');
         } else {
             updateStatus("🛑 Stopped", 'warning');
@@ -937,6 +1417,17 @@
         });
     });
 
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        updateTable();
+    });
+
+    addFilterBtn.addEventListener('click', addFilter);
+
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', () => handleSort(th.dataset.column));
+    });
+
     // === Initialize ===
     window.addEventListener('load', () => {
         updateStatus("Ready", 'info');
@@ -977,6 +1468,53 @@
             document.onmouseup = null;
             document.onmousemove = null;
         }
+    }
+
+    function showProgressBar(durationMs) {
+        if (!progressBarContainer || !progressBar || !progressBarLabel) return;
+        progressBarContainer.style.display = 'block';
+        progressBar.style.width = '0';
+        let elapsed = 0;
+        const interval = 100;
+        const total = durationMs;
+        function update() {
+            elapsed += interval;
+            const percent = Math.min(100, (elapsed / total) * 100);
+            progressBar.style.width = percent + '%';
+            const secondsLeft = Math.ceil((total - elapsed) / 1000);
+            progressBarLabel.textContent = `⏳ Waiting ${secondsLeft}s`;
+            if (elapsed < total && isParsing) {
+                setTimeout(update, interval);
+            } else {
+                progressBarContainer.style.display = 'none';
+            }
+        }
+        update();
+    }
+
+    function hideProgressBar() {
+        if (progressBarContainer) progressBarContainer.style.display = 'none';
+    }
+
+    // Highlight GUIDE if not read before
+    if (guideBtn && !localStorage.getItem('guide_read')) {
+        guideBtn.classList.add('guide-highlight');
+        // Add NEW badge
+        const badge = document.createElement('span');
+        badge.className = 'guide-badge';
+        badge.textContent = 'NEW';
+        guideBtn.style.position = 'relative';
+        guideBtn.appendChild(badge);
+    }
+
+    // On GUIDE click, remove highlight and badge, set localStorage
+    if (guideBtn) {
+        guideBtn.addEventListener('click', () => {
+            guideBtn.classList.remove('guide-highlight');
+            const badge = guideBtn.querySelector('.guide-badge');
+            if (badge) badge.remove();
+            localStorage.setItem('guide_read', '1');
+        });
     }
 
 })();
