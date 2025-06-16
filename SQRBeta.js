@@ -1029,6 +1029,29 @@
     function addResult(result) {
         if (!result || !result.items.length) return;
 
+        // Calculate total subtotalProduk for proportional allocation
+        let totalSubtotalProduk = 0;
+        result.items.forEach(item => {
+            totalSubtotalProduk += parseCurrency(item.subtotalProduk);
+        });
+
+        // Parse order-level costs (raw numbers)
+        const orderShipping = parseCurrency(result.items[0].subtotalPengiriman);
+        const orderDiskon = parseCurrency(result.items[0].diskonPengiriman);
+        const orderVoucher = parseCurrency(result.items[0].voucherShopee);
+        const orderFee = parseCurrency(result.items[0].biayaLayanan);
+        const orderTotal = parseCurrency(result.items[0].totalPesanan);
+
+        // Allocate costs proportionally (keep as numbers)
+        result.items.forEach(item => {
+            const prop = totalSubtotalProduk > 0 ? parseCurrency(item.subtotalProduk) / totalSubtotalProduk : 1 / result.items.length;
+            item._allocatedSubtotalPengiriman = orderShipping * prop;
+            item._allocatedDiskonPengiriman = orderDiskon * prop;
+            item._allocatedVoucherShopee = orderVoucher * prop;
+            item._allocatedBiayaLayanan = orderFee * prop;
+            item._allocatedTotalPesanan = orderTotal * prop;
+        });
+
         result.items.forEach(item => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -1037,14 +1060,23 @@
                 <td>${result['Order Date']}</td>
                 <td>${item.name}</td>
                 <td class="price">${item.subtotalProduk || '-'}</td>
-                <td class="price">${item.subtotalPengiriman || '-'}</td>
-                <td class="price negative">${item.diskonPengiriman || '-'}</td>
-                <td class="price negative">${item.voucherShopee || '-'}</td>
-                <td class="price">${item.biayaLayanan || '-'}</td>
-                <td class="price total">${item.totalPesanan || '-'}</td>
+                <td class="price">${formatCurrency(item._allocatedSubtotalPengiriman)}</td>
+                <td class="price negative">${formatCurrency(item._allocatedDiskonPengiriman)}</td>
+                <td class="price negative">${formatCurrency(item._allocatedVoucherShopee)}</td>
+                <td class="price">${formatCurrency(item._allocatedBiayaLayanan)}</td>
+                <td class="price total">${formatCurrency(item._allocatedTotalPesanan)}</td>
                 <td><a href="${result.URL}" target="_blank">${result.URL}</a></td>
             `;
             resultsBody.appendChild(row);
+        });
+
+        // Store the allocated values for export and stats
+        result.items.forEach(item => {
+            item.subtotalPengiriman = item._allocatedSubtotalPengiriman;
+            item.diskonPengiriman = item._allocatedDiskonPengiriman;
+            item.voucherShopee = item._allocatedVoucherShopee;
+            item.biayaLayanan = item._allocatedBiayaLayanan;
+            item.totalPesanan = item._allocatedTotalPesanan;
         });
 
         parsedData.push(result);
@@ -1091,11 +1123,11 @@
                     order['Order Date'],
                     item.name,
                     item.subtotalProduk || '-',
-                    item.subtotalPengiriman || '-',
-                    item.diskonPengiriman || '-',
-                    item.voucherShopee || '-',
-                    item.biayaLayanan || '-',
-                    item.totalPesanan || '-',
+                    formatCurrency(item.subtotalPengiriman),
+                    formatCurrency(item.diskonPengiriman),
+                    formatCurrency(item.voucherShopee),
+                    formatCurrency(item.biayaLayanan),
+                    formatCurrency(item.totalPesanan),
                     `"${order.URL}"`
                 ].join(CONFIG.CSV_DELIMITER) + '\n';
                 grandTotal += parseCurrency(item.totalPesanan);
