@@ -90,3 +90,75 @@ Developed by [Ryu-Sena](https://github.com/tukangcode) | IndoTech Community
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+# 🇮🇩 Shopee Financial Tracker (Bahasa Indonesia)
+Skrip ini membantumu mencatat dan menganalisis semua transaksi belanja di Shopee secara otomatis, lengkap dengan laporan keuangan yang detail.
+Fitur Unggulan
+
+    📊 Rincian Keuangan Lengkap
+    Pecah setiap pesanan untuk melihat:
+        Harga asli produk
+        Ongkos kirim & diskon ongkir
+        Voucher yang dipakai
+        Biaya layanan
+        Total akhir yang kamu bayar
+
+    🎨 Tampilan Modern & Nyaman
+        Antarmuka yang bersih dan gampang dimengerti.
+        Pilih mode terang atau gelap sesuai selera.
+        Jendela bisa digeser dan diubah ukurannya.
+        Pantau progres secara real-time dengan notifikasi yang jelas.
+
+    📈 Ekspor Data Jadi Gampang
+        Ekspor ke CSV yang langsung rapi saat dibuka di Excel.
+        Ekspor ke Markdown untuk catatan atau dokumentasi.
+        Format mata uang sudah disesuaikan (Rp).
+
+    🔄 Fitur Pintar untuk Kemudahan
+        Otomatis mengambil semua link pesanan dari halaman riwayat.
+        Mendeteksi dan menghapus link yang ganda.
+        Jika ada kendala, skrip akan mencoba ulang secara otomatis.
+        Bisa menangani popup dan mendeteksi jika ada CAPTCHA.
+
+Cara Pemasangan
+
+    Install dulu userscript manager (pilih salah satu):
+        Tampermonkey (Paling direkomendasikan)
+        Violentmonkey
+        Greasemonkey
+
+    Klik tombol "Raw" di halaman skrip ini untuk memasangnya.
+
+Langkah-langkah Pemakaian
+
+    Izinkan Popup: Pastikan browser kamu mengizinkan popup dari situs Shopee.
+        Biasanya ada ikon 🔐 atau ⓘ di address bar untuk mengatur ini.
+
+    Ambil Link Pesanan: Buka halaman "Pesanan Saya" di Shopee, lalu klik tombol [🔗 Extract Order Links].
+
+    Hapus Link Ganda: Klik [🔍 Remove Duplicates] untuk memastikan tidak ada data yang dobel.
+
+    Mulai Lacak: Klik [▶️ Start] dan biarkan skrip bekerja mengambil detail setiap pesanan.
+
+    Ekspor Hasil: Setelah selesai, simpan datamu dengan klik:
+        [📊 Export CSV] untuk diolah di Excel/Sheets.
+        [📝 Export Markdown] untuk dokumentasi.
+
+Kontrol & Tips
+
+    Tampilkan/Sembunyikan Jendela: Tekan Ctrl+M.
+    Ganti Mode: Klik ikon 🌙 (gelap) atau ☀️ (terang).
+    Biar Aman: Proses 1-3 pesanan dalam satu waktu untuk menghindari terdeteksi oleh sistem Shopee.
+    Captcha: Jika muncul CAPTCHA, selesaikan secara manual agar proses bisa lanjut.
+    Simpan Preferensi: Pilihan mode gelap/terang akan tersimpan otomatis.
+
+Dukungan & Kredit
+
+Punya masalah, ide, atau mau berkontribusi?
+
+    Buat issue baru di laman GitHub.
+    Hubungi langsung developernya.
+
+Dikembangkan oleh Ryu-Sena | Komunitas IndoTech
