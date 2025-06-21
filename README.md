@@ -30,7 +30,13 @@ A powerful browser extension to track and analyze your Shopee purchases with com
   - Duplicate detection and removal
   - Smart retry mechanism
   - Popup handling
-  - Anti CAPTCHA detection 
+  - Anti CAPTCHA detection
+ 
+## Image
+![UI](images/UI.png)
+![Script in action](images/detail.png)
+![Export](images/Export.png)
+
 
 ## Installation
 
