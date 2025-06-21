@@ -2,7 +2,7 @@
 Formerly know as Shoppe Quick Report
 
 A powerful browser extension to track and analyze your Shopee purchases with comperhensive financial reporting.
-- [Untuk Panduan dan toturial bahasa indonesia silahkan klik disini](#Shopee-Financial-Tracker-)
+- [Untuk Panduan dan toturial bahasa indonesia silahkan klik disini](#Shopee-Financial-Tracker)
 ## Features
 
 - 📊 **Comprehensive Financial Tracking**
@@ -97,7 +97,7 @@ This project is licensed under the MIT License -  Go google for it for detail ab
 
 ---
 
-# Shopee Financial Tracker (Bahasa Indonesia)
+# Shopee Financial Tracker
 ## Pelacak Keuangan Shopee
 Sebelumnya dikenal sebagai Shopee Quick Report
 
