@@ -1,4 +1,5 @@
 # Shopee Financial Tracker
+<img src="images/logo1.png" width="320">
 Formerly know as Shoppe Quick Report
 
 A powerful browser extension to track and analyze your Shopee purchases with comperhensive financial reporting.
@@ -35,7 +36,7 @@ A powerful browser extension to track and analyze your Shopee purchases with com
 ## Image
 ![UI](images/UI.png)
 ![Script in action](images/detail.png)
-![Export](images/Export.png)
+![Export](images/export.png)
 
 
 ## Installation
@@ -97,6 +98,9 @@ For issues, suggestions, or contributions:
 
 Developed by [Ryu-Sena](https://github.com/tukangcode) | IndoTech Community
 
+## Disclaimer
+This project is not affilated with shoppe.co.id or Shoppe in any way, this Script function to create quick financial reporting only, Shoppe and it logo are trademark and copyright to Shopee Pte. Ltd. All right reserved, Use at own risk Author not responsible for any damage,inaacruacy or lawsuit by using this tool.
+
 ## License
 
 This project is licensed under the MIT License -  Go google for it for detail about license
@@ -106,7 +110,6 @@ This project is licensed under the MIT License -  Go google for it for detail ab
 # Shopee Financial Tracker
 ## Pelacak Keuangan Shopee
 Sebelumnya dikenal sebagai Shopee Quick Report
-
 Sebuah ekstensi peramban yang kuat untuk melacak dan menganalisis pembelian Anda di Shopee dengan pelaporan keuangan yang komprehensif.
 
 ## Fitur
@@ -136,6 +139,12 @@ Sebuah ekstensi peramban yang kuat untuk melacak dan menganalisis pembelian Anda
   - Mekanisme ulang cerdas
   - Penanganan popup
   - Deteksi Anti CAPTCHA
+
+## Image
+![UI](images/UI.png)
+![Script in action](images/detail.png)
+![Export](images/export.png)
+
 
 ## Instalasi
 
@@ -192,6 +201,10 @@ Sebuah ekstensi peramban yang kuat untuk melacak dan menganalisis pembelian Anda
 Untuk masalah, saran, atau kontribusi:
 - Buat issue di GitHub
 - Hubungi pengembang secara langsung
+
+## Penafian
+Proyek ini tidak berafiliasi dengan shopee.co.id maupun Shopee dalam bentuk apa pun. Script ini hanya berfungsi untuk membuat laporan keuangan secara cepat. Shopee dan logonya adalah merek dagang dan hak cipta milik Shopee Pte. Ltd. Seluruh hak dilindungi. Gunakan Dengan Resiko Sendiri ! Pembuat dan Tim tidak Bertangung jawab atas kerusakaan atau kesalahan, ketidaakurataan dan tuntutan hukum dari pengunaan alat ini.
+
 
 ## Kredit
 
