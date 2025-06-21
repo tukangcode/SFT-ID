@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Shopee Financial Tracker
 // @namespace    http://tampermonkey.net/
-// @version      10
-// @description  Track and analyze your Shopee purchases with detailed financial reporting
-// @author       Ryu-Sena (IndoTech Community)
+// @version      2.0
+// @description  Track and analyze your Shopee purchases with Comperhensive financial reporting
+// @author       Ryu-Sena (IndoTech Community) improvement Ui by pataanggs
 // @match        https://shopee.co.id/*
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
@@ -15,9 +15,9 @@
 
     // Configuration
     const CONFIG = {
-        PAGE_LOAD_TIMEOUT: 20000,
-        BETWEEN_DELAY: 10000,
-        MAX_RETRIES: 2,
+        PAGE_LOAD_TIMEOUT: 18000,
+        BETWEEN_DELAY: 5000,
+        MAX_RETRIES: 5,
         UI_TOGGLE_KEY: 'KeyM',
         THEME_KEY: 'shopee_parser_theme',
         CSV_DELIMITER: ';',
@@ -572,7 +572,7 @@
             <div class="parser-container">
                 <div class="parser-header">
                     <div class="parser-title">
-                        <span>📊 Shopee Financial Tracker v10</span>
+                        <span>📊 Shopee Financial Tracker v13.1</span>
                     </div>
                     <div class="header-controls">
                         <button class="btn btn-gray" id="guide-btn">📘 Guide</button>
@@ -602,11 +602,9 @@
                             <th class="sortable" data-column="Shop">Shop</th>
                             <th class="sortable" data-column="Order Date">Order Date</th>
                             <th class="sortable" data-column="Item">Item</th>
-                            <th class="sortable" data-column="Subtotal Produk">Subtotal Produk</th>
-                            <th class="sortable" data-column="Subtotal Pengiriman">Subtotal Pengiriman</th>
-                            <th class="sortable" data-column="Diskon Pengiriman">Diskon Pengiriman</th>
-                            <th class="sortable" data-column="Voucher Shopee">Voucher Shopee</th>
-                            <th class="sortable" data-column="Biaya Layanan">Biaya Layanan</th>
+                            <th class="sortable" data-column="Harga Asli">Harga Asli</th>
+                            <th class="sortable" data-column="Harga Discount">Harga Discount</th>
+                            <th class="sortable" data-column="Quantity">Quantity</th>
                             <th class="sortable" data-column="Total Pesanan">Total Pesanan</th>
                             <th>URL</th>
                         </tr>
@@ -674,7 +672,9 @@
                     <option value="Shop">Shop</option>
                     <option value="Order Date">Order Date</option>
                     <option value="Item">Item</option>
-                    <option value="Subtotal Produk">Subtotal Produk</option>
+                    <option value="Harga Asli">Harga Asli</option>
+                    <option value="Harga Discount">Harga Discount</option>
+                    <option value="Quantity">Quantity</option>
                     <option value="Total Pesanan">Total Pesanan</option>
                 </select>
                 <select class="filter-select" id="filter-type">
@@ -700,10 +700,6 @@
             <div class="stat-item">
                 <div class="stat-label">Average Order Value</div>
                 <div class="stat-value" id="avg-order">Rp 0</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Total Savings</div>
-                <div class="stat-value positive" id="total-savings">Rp 0</div>
             </div>
         </div>
     `;
@@ -741,7 +737,6 @@
     const totalOrders = document.getElementById('total-orders');
     const totalSpent = document.getElementById('total-spent');
     const avgOrder = document.getElementById('avg-order');
-    const totalSavings = document.getElementById('total-savings');
     const grandTotalValue = document.getElementById('grand-total-value');
     const progressBarContainer = document.getElementById('progress-bar-container');
     const progressBar = document.getElementById('progress-bar');
@@ -845,33 +840,34 @@
             style: 'currency',
             currency: 'IDR',
             minimumFractionDigits: 0,
-            maximumFractionDigits: 3
+            maximumFractionDigits: 0
         }).format(amount);
     }
 
     function parseCurrency(amount) {
         if (typeof amount === 'number') return amount;
-        return parseFloat(amount.replace(/[^0-9.-]+/g, '')) || 0;
+
+        // Handle Indonesian currency formatting (Rp26.400 → 26400)
+        const cleaned = amount
+            .replace(/[^\d,.-]/g, '')  // Remove non-numeric except ,.-
+            .replace(/\./g, '')         // Remove thousands separators
+            .replace(/,/g, '.')         // Convert decimal comma to dot
+            .replace(/[^0-9.-]/g, '');  // Remove any remaining non-numeric
+
+        return parseFloat(cleaned) || 0;
     }
 
     function updateStats() {
         const filteredData = getFilteredData();
         const total = filteredData.reduce((sum, order) => {
             return sum + order.items.reduce((itemSum, item) => {
-                return itemSum + parseCurrency(item.totalPesanan);
-            }, 0);
-        }, 0);
-
-        const savings = filteredData.reduce((sum, order) => {
-            return sum + order.items.reduce((itemSum, item) => {
-                return itemSum + parseCurrency(item.diskonPengiriman) + parseCurrency(item.voucherShopee);
+                return itemSum + (item.total || 0);
             }, 0);
         }, 0);
 
         totalOrders.textContent = filteredData.length;
         totalSpent.textContent = formatCurrency(total);
         avgOrder.textContent = formatCurrency(total / (filteredData.length || 1));
-        totalSavings.textContent = formatCurrency(savings);
         updateGrandTotal();
     }
 
@@ -879,7 +875,7 @@
         const filteredData = getFilteredData();
         const grandTotal = filteredData.reduce((sum, order) => {
             return sum + order.items.reduce((itemSum, item) => {
-                return itemSum + parseCurrency(item.totalPesanan);
+                return itemSum + (item.total || 0);
             }, 0);
         }, 0);
         if (grandTotalValue) {
@@ -896,7 +892,11 @@
             filtered = filtered.filter(order => {
                 return order.Shop.toLowerCase().includes(query) ||
                        order['Order Date'].toLowerCase().includes(query) ||
-                       order.items.some(item => item.name.toLowerCase().includes(query));
+                       order.items.some(item => item.name.toLowerCase().includes(query) ||
+                       (item.hargaAsli && item.hargaAsli.toLowerCase().includes(query)) ||
+                       (item.hargaDiscount && item.hargaDiscount.toLowerCase().includes(query)) ||
+                       (item.quantity && item.quantity.toString().includes(query)) ||
+                       (item.totalPesanan && item.totalPesanan.toLowerCase().includes(query)));
             });
         }
 
@@ -909,9 +909,9 @@
 
                     switch (filter.type) {
                         case CONFIG.FILTER_TYPES.CONTAINS:
-                            return value.toLowerCase().includes(filter.value.toLowerCase());
+                            return value.toString().toLowerCase().includes(filter.value.toLowerCase());
                         case CONFIG.FILTER_TYPES.EQUALS:
-                            return value.toLowerCase() === filter.value.toLowerCase();
+                            return value.toString().toLowerCase() === filter.value.toLowerCase();
                         case CONFIG.FILTER_TYPES.GREATER_THAN:
                             return parseCurrency(value) > parseCurrency(filter.value);
                         case CONFIG.FILTER_TYPES.LESS_THAN:
@@ -955,11 +955,9 @@
                     <td>${order.Shop}</td>
                     <td>${order['Order Date']}</td>
                     <td>${item.name}</td>
-                    <td class="price">${item.subtotalProduk || '-'}</td>
-                    <td class="price">${item.subtotalPengiriman || '-'}</td>
-                    <td class="price negative">${item.diskonPengiriman || '-'}</td>
-                    <td class="price negative">${item.voucherShopee || '-'}</td>
-                    <td class="price">${item.biayaLayanan || '-'}</td>
+                    <td class="price">${item.hargaAsli || '-'}</td>
+                    <td class="price">${item.hargaDiscount || '-'}</td>
+                    <td>${item.quantity || '-'}</td>
                     <td class="price total">${item.totalPesanan || '-'}</td>
                     <td><a href="${order.URL}" target="_blank">${order.URL}</a></td>
                 `;
@@ -1028,30 +1026,7 @@
 
     function addResult(result) {
         if (!result || !result.items.length) return;
-
-        // Calculate total subtotalProduk for proportional allocation
-        let totalSubtotalProduk = 0;
-        result.items.forEach(item => {
-            totalSubtotalProduk += parseCurrency(item.subtotalProduk);
-        });
-
-        // Parse order-level costs (raw numbers)
-        const orderShipping = parseCurrency(result.items[0].subtotalPengiriman);
-        const orderDiskon = parseCurrency(result.items[0].diskonPengiriman);
-        const orderVoucher = parseCurrency(result.items[0].voucherShopee);
-        const orderFee = parseCurrency(result.items[0].biayaLayanan);
-        const orderTotal = parseCurrency(result.items[0].totalPesanan);
-
-        // Allocate costs proportionally (keep as numbers)
-        result.items.forEach(item => {
-            const prop = totalSubtotalProduk > 0 ? parseCurrency(item.subtotalProduk) / totalSubtotalProduk : 1 / result.items.length;
-            item._allocatedSubtotalPengiriman = orderShipping * prop;
-            item._allocatedDiskonPengiriman = orderDiskon * prop;
-            item._allocatedVoucherShopee = orderVoucher * prop;
-            item._allocatedBiayaLayanan = orderFee * prop;
-            item._allocatedTotalPesanan = orderTotal * prop;
-        });
-
+        parsedData.push(result);
         result.items.forEach(item => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -1059,27 +1034,14 @@
                 <td>${result.Shop}</td>
                 <td>${result['Order Date']}</td>
                 <td>${item.name}</td>
-                <td class="price">${item.subtotalProduk || '-'}</td>
-                <td class="price">${formatCurrency(item._allocatedSubtotalPengiriman)}</td>
-                <td class="price negative">${formatCurrency(item._allocatedDiskonPengiriman)}</td>
-                <td class="price negative">${formatCurrency(item._allocatedVoucherShopee)}</td>
-                <td class="price">${formatCurrency(item._allocatedBiayaLayanan)}</td>
-                <td class="price total">${formatCurrency(item._allocatedTotalPesanan)}</td>
+                <td class="price">${item.hargaAsli || '-'}</td>
+                <td class="price">${item.hargaDiscount || '-'}</td>
+                <td>${item.quantity || '-'}</td>
+                <td class="price total">${item.totalPesanan || '-'}</td>
                 <td><a href="${result.URL}" target="_blank">${result.URL}</a></td>
             `;
             resultsBody.appendChild(row);
         });
-
-        // Store the allocated values for export and stats
-        result.items.forEach(item => {
-            item.subtotalPengiriman = item._allocatedSubtotalPengiriman;
-            item.diskonPengiriman = item._allocatedDiskonPengiriman;
-            item.voucherShopee = item._allocatedVoucherShopee;
-            item.biayaLayanan = item._allocatedBiayaLayanan;
-            item.totalPesanan = item._allocatedTotalPesanan;
-        });
-
-        parsedData.push(result);
         updateStats();
     }
 
@@ -1112,37 +1074,41 @@
     }
 
     function exportToCSV(data) {
-        const headers = ['Entry','Shop','Order Date','Item','Subtotal Produk','Subtotal Pengiriman','Diskon Pengiriman','Voucher Shopee','Biaya Layanan','Total Pesanan','URL'];
+        const headers = ['Entry','Shop','Order Date','Item','Harga Asli','Harga Discount','Quantity','Total Pesanan','URL'];
         let csv = headers.join(CONFIG.CSV_DELIMITER) + '\n';
         let grandTotal = 0;
         data.forEach(order => {
             order.items.forEach(item => {
+                // Format numbers properly for CSV
+                const hargaAsliFormatted = item.hargaAsli ? parseCurrency(item.hargaAsli) : '';
+                const hargaDiscountFormatted = item.hargaDiscount ? parseCurrency(item.hargaDiscount) : '';
+                const totalPesananFormatted = item.total || 0;
+
+                grandTotal += totalPesananFormatted;
+
                 csv += [
                     order.Entry,
-                    order.Shop,
-                    order['Order Date'],
-                    item.name,
-                    item.subtotalProduk || '-',
-                    formatCurrency(item.subtotalPengiriman),
-                    formatCurrency(item.diskonPengiriman),
-                    formatCurrency(item.voucherShopee),
-                    formatCurrency(item.biayaLayanan),
-                    formatCurrency(item.totalPesanan),
+                    `"${order.Shop.replace(/"/g, '""')}"`,
+                    `"${order['Order Date']}"`,
+                    `"${item.name.replace(/"/g, '""')}"`,
+                    hargaAsliFormatted,
+                    hargaDiscountFormatted,
+                    item.quantity || '1',
+                    totalPesananFormatted,
                     `"${order.URL}"`
                 ].join(CONFIG.CSV_DELIMITER) + '\n';
-                grandTotal += parseCurrency(item.totalPesanan);
             });
         });
-        // Add a summary row for Grand Total
+        // Add a summary row for Grand Total (formatted correctly)
         csv += [
-            '', '', '', '', '', '', '', '', 'Grand Total', formatCurrency(grandTotal), ''
+            '', '', '', '', '', '', 'Grand Total', grandTotal, ''
         ].join(CONFIG.CSV_DELIMITER) + '\n';
         downloadFile(csv, 'shopee_orders.csv');
         showNotification('✅ CSV exported successfully!', 'success');
     }
 
     function exportToMarkdown(data) {
-        const headers = ['Entry','Shop','Order Date','Item','Subtotal Produk','Subtotal Pengiriman','Diskon Pengiriman','Voucher Shopee','Biaya Layanan','Total Pesanan','URL'];
+        const headers = ['Entry','Shop','Order Date','Item','Harga Asli','Harga Discount','Quantity','Total Pesanan','URL'];
         let md = '# Shopee Orders\n';
         md += headers.map(h => `**${h}**`).join(' | ') + '\n';
         md += headers.map(() => '---').join(' | ') + '\n';
@@ -1153,13 +1119,11 @@
                     order.Shop,
                     order['Order Date'],
                     item.name,
-                    item.subtotalProduk || '-',
-                    item.subtotalPengiriman || '-',
-                    item.diskonPengiriman || '-',
-                    item.voucherShopee || '-',
-                    item.biayaLayanan || '-',
+                    item.hargaAsli || '-',
+                    item.hargaDiscount || '-',
+                    item.quantity || '1',
                     item.totalPesanan || '-',
-                    order.URL
+                    `[Link](${order.URL})`
                 ].join(' | ') + '\n';
             });
         });
@@ -1239,49 +1203,55 @@
                 const shopName = doc.querySelector('.UDaMW3')?.textContent.trim() || 'NOT FOUND';
                 const orderDate = doc.querySelector('.stepper__step-date')?.textContent.trim() || 'NOT FOUND';
 
-                // Helper function to find value by label
-                const findValueByLabel = (label) => {
-                    const elements = Array.from(doc.querySelectorAll('.kW3VDc'));
-                    const element = elements.find(el => 
-                        el.querySelector('.Vg5MF2 span')?.textContent.trim() === label
-                    );
-                    return element?.querySelector('.Tfejtu div')?.textContent.trim() || 'NOT FOUND';
-                };
-
-                // Get all order details
-                const subtotalProduk = findValueByLabel('Subtotal Produk');
-                const subtotalPengiriman = findValueByLabel('Subtotal Pengiriman');
-                const diskonPengiriman = findValueByLabel('Subtotal Diskon Pengiriman');
-                const voucherShopee = findValueByLabel('Voucher Shopee Digunakan');
-                const biayaLayanan = findValueByLabel('Biaya Layanan');
-                const totalPesanan = findValueByLabel('Total Pesanan');
-
-                // Debug logging
-                console.log('Order Details:', {
-                    subtotalProduk,
-                    subtotalPengiriman,
-                    diskonPengiriman,
-                    voucherShopee,
-                    biayaLayanan,
-                    totalPesanan
-                });
-
                 const itemElements = doc.querySelectorAll('a.mZ1OWk');
                 const items = [];
 
                 itemElements.forEach(item => {
                     const name = item.querySelector('.DWVWOJ')?.textContent.trim() || 'NOT FOUND';
-                    const quantity = item.querySelector('.j3I_Nh')?.textContent.trim() || 'x1';
+                    const quantityText = item.querySelector('.j3I_Nh')?.textContent.trim() || 'x1';
+                    const quantity = parseInt(quantityText.replace('x', '')) || 1;
+
+                    // Extract prices
+                    let hargaAsli = '';
+                    let hargaDiscount = '';
+
+                    // First check for discount scenario (both original and discount prices exist)
+                    const originalPriceEl = item.querySelector('.q6Gzj5'); // Original price class
+                    const discountPriceEl = item.querySelector('.PNlXhK'); // Discount price class
+
+                    if (originalPriceEl && discountPriceEl) {
+                        // Standard discount case
+                        hargaAsli = originalPriceEl.textContent.trim();
+                        hargaDiscount = discountPriceEl.textContent.trim();
+                    } else {
+                        // Check for single price (no discount)
+                        const singlePriceEl = item.querySelector('.nW_6Oi:not(.PNlXhK)'); // Regular price without discount class
+                        if (singlePriceEl) {
+                            hargaAsli = singlePriceEl.textContent.trim();
+                            hargaDiscount = hargaAsli; // Same as original if no discount
+                        } else {
+                            // Fallback - try to find any price element
+                            const anyPriceEl = item.querySelector('.nW_6Oi');
+                            if (anyPriceEl) {
+                                hargaAsli = anyPriceEl.textContent.trim();
+                                hargaDiscount = hargaAsli;
+                            }
+                        }
+                    }
+
+                    // Calculate item total using DISCOUNTED price
+                    const discountValue = parseCurrency(hargaDiscount);
+                    const itemTotal = discountValue * quantity;
+                    const totalPesanan = formatCurrency(itemTotal);
 
                     if (name !== 'NOT FOUND') {
                         items.push({
-                            name: `${name} ${quantity}`,
-                            subtotalProduk,
-                            subtotalPengiriman,
-                            diskonPengiriman,
-                            voucherShopee,
-                            biayaLayanan,
-                            totalPesanan
+                            name: name,
+                            hargaAsli: hargaAsli || '-',
+                            hargaDiscount: hargaDiscount || '-',
+                            quantity: quantity,
+                            total: itemTotal, // Store numeric value for calculations
+                            totalPesanan: totalPesanan
                         });
                     }
                 });
@@ -1336,15 +1306,24 @@
         }
 
         clearResults();
+        const totalUrls = urls.length;
+        let processedUrls = 0;
 
         for (const url of urls) {
             if (!isParsing) break;
-            updateStatus(`Processing #${currentEntry}`, 'info');
+
+            // Update progress
+            processedUrls++;
+            const progressPercent = Math.round((processedUrls / totalUrls) * 100);
+            updateStatus(`Processing order ${processedUrls} of ${totalUrls} (${progressPercent}%)`, 'info');
+
             const result = await scrapeOrderDetail(url, currentEntry);
             if (result && isParsing) {
                 addResult(result);
                 currentEntry++;
-                if (urls.indexOf(url) < urls.length - 1) {
+
+                // Add delay between orders
+                if (processedUrls < totalUrls) {
                     showProgressBar(CONFIG.BETWEEN_DELAY);
                     await cancellableDelay(CONFIG.BETWEEN_DELAY);
                     hideProgressBar();
@@ -1356,14 +1335,7 @@
             // Calculate grand total
             const grandTotal = parsedData.reduce((sum, order) => {
                 return sum + order.items.reduce((itemSum, item) => {
-                    return itemSum + parseCurrency(item.totalPesanan);
-                }, 0);
-            }, 0);
-
-            // Calculate total savings
-            const totalSavings = parsedData.reduce((sum, order) => {
-                return sum + order.items.reduce((itemSum, item) => {
-                    return itemSum + parseCurrency(item.diskonPengiriman) + parseCurrency(item.voucherShopee);
+                    return itemSum + (item.total || 0);
                 }, 0);
             }, 0);
 
@@ -1374,8 +1346,7 @@
 📊 Financial Summary:
 • Total Orders: ${parsedData.length}
 • Grand Total Spent: ${formatCurrency(grandTotal)}
-• Total Savings: ${formatCurrency(totalSavings)}
-• Average Order Value: ${formatCurrency(grandTotal / parsedData.length)}
+• Average Order Value: ${formatCurrency(grandTotal / (parsedData.length || 1))}
 `;
 
             updateStatus(completionMessage, 'success');
@@ -1470,7 +1441,7 @@
     function makeDraggable(element) {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         const header = element.querySelector('.parser-header');
-        
+
         header.onmousedown = dragMouseDown;
 
         function dragMouseDown(e) {
