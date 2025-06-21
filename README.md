@@ -46,8 +46,9 @@ A powerful browser extension to track and analyze your Shopee purchases with com
    - [Violentmonkey](https://violentmonkey.github.io/)
    - [Greasemonkey](https://www.greasespot.net/)
 
-2. -  Instal through [GreasyFork](TBA) or
-   -  Github [Release](TBA)
+2.  Instalation 
+   -  Instal through [GreasyFork](https://greasyfork.org/en/scripts/540269-shopee-financial-tracker) or
+   -  Github [Release](https://github.com/tukangcode/SFT-ID/releases/tag/v2.0)
 
 ## Usage
 
@@ -153,9 +154,9 @@ Sebuah ekstensi peramban yang kuat untuk melacak dan menganalisis pembelian Anda
    - [Violentmonkey](https://violentmonkey.github.io/)
    - [Greasemonkey](https://www.greasespot.net/)
 
-2. 
-   - Instal melalui [GreasyFork](TBA) atau
-   - [Rilis di Github](TBA)
+2.  Instalation 
+   -  Instal via [GreasyFork](https://greasyfork.org/en/scripts/540269-shopee-financial-tracker) atau
+   -  Github [Release](https://github.com/tukangcode/SFT-ID/releases/tag/v2.0)
 
 ## Penggunaan
 
